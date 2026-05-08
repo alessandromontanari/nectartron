@@ -5,5 +5,8 @@ venv
 # python caches
 *__pycache__
 
+# other caches
+unsloth_compiled_cache
+
 # private data
 notes/
