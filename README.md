@@ -43,3 +43,26 @@ pip install -r requirements-finetune.txt
 ```bash
 pip install bitsandbytes-cuda120  # For CUDA 12.0
 ```
+
+### 3. Verify GPU Access
+
+```bash
+python3 -c "import torch; print(f'PyTorch version: {torch.__version__}'); print(f'GPU available: {torch.cuda.is_available()}'); print(f'GPU name: {torch.cuda.get_device_name(0)}')"
+```
+
+Should output something like:
+```
+PyTorch version: 2.X.X
+GPU available: True
+GPU name: NVIDIA RTX PRO 2000 Blackwell Generation Laptop GPU
+```
+
+## Running Fine-tuning
+
+### Quick Start
+
+From the project's root directory. 
+
+```bash
+python -m run.fine_tune
+```
