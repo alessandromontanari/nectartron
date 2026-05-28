@@ -57,12 +57,22 @@ GPU available: True
 GPU name: NVIDIA RTX PRO 2000 Blackwell Generation Laptop GPU
 ```
 
-## Running Fine-tuning
+## Usage
 
-### Quick Start
+### Fine-tuning
 
 From the project's root directory. 
 
 ```bash
 python -m run.fine_tune
 ```
+
+### Q&A with the model
+
+From the project's root directory. 
+
+```bash
+python -m run.qa_w_model
+```
+
+One can change the question for the model inside the script.
