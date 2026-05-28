@@ -7,10 +7,16 @@ from config.training_config import (
     INFERENCE_PARAMS
 )
 
+import logging
+logger = logging.getLogger(__name__)
+
+
+from utils.logging_config import log_and_print
+
 
 def tokenize_dataset(texts: List[str], tokenizer, max_length: int) -> Dict:
     """Tokenize texts for training."""
-    print("Tokenizing dataset...")
+    log_and_print(logger, "Tokenizing dataset...")
     
     tokenized = tokenizer(
         texts,
@@ -27,7 +33,7 @@ def tokenize_dataset(texts: List[str], tokenizer, max_length: int) -> Dict:
     labels[:, -1] = -100  # Ignore last token
     
     tokenized["labels"] = labels
-    print(f"✓ Tokenized {len(texts)} samples")
+    log_and_print(logger, f"✓ Tokenized {len(texts)} samples")
     
     return tokenized
 
@@ -68,15 +74,11 @@ def train_model(model, tokenizer, formatted_texts: List[str], output_dir: str):
         data_collator=data_collator,
     )
     
-    print("\n" + "="*60)
-    print("Starting fine-tuning...")
-    print("="*60 + "\n")
+    logger.info("Starting fine-tuning...")
     
     trainer.train()
     
-    print("\n" + "="*60)
-    print("✓ Training completed!")
-    print("="*60 + "\n")
+    log_and_print(logger, "✓ Training completed!")
     
     return model, tokenizer
 
@@ -85,20 +87,18 @@ def save_model(model, tokenizer, output_dir: str):
     """Save fine-tuned model and tokenizer."""
     Path(output_dir).mkdir(parents=True, exist_ok=True)
     
-    print(f"\nSaving model to {output_dir}...")
-    
+    log_and_print(logger, f"Saving model to {output_dir}...")
     # Save LoRA adapters
     model.save_pretrained(output_dir)
     tokenizer.save_pretrained(output_dir)
     
-    print(f"✓ Model saved!")
+    log_and_print(logger, f"✓ Model saved to {output_dir}!")
 
 
 def test_inference(model, tokenizer, test_questions: List[str]):
     """Test the fine-tuned model on sample questions."""
-    print("\n" + "="*60)
-    print("Testing inference on sample questions...")
-    print("="*60 + "\n")
+    log_and_print(logger, "Testing inference on sample questions...")
+    log_and_print(logger, "="*60 + "\n")
     
     for question in test_questions:
         prompt = f"<s>[INST] {question} [/INST]"
@@ -114,5 +114,5 @@ def test_inference(model, tokenizer, test_questions: List[str]):
         response = tokenizer.decode(outputs[0], skip_special_tokens=True)
         response = response.replace(prompt, "").strip()
         
-        print(f"Q: {question}")
-        print(f"A: {response}\n")
+        log_and_print(logger, f"Q: {question}")
+        log_and_print(logger, f"A: {response}\n")

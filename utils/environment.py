@@ -1,6 +1,9 @@
 import os
+import logging
+logger = logging.getLogger(__name__)
 
-# TODO: logging
+from utils.logging_config import log_and_print
+
 
 def setup_environment(production=False):
     """Configure environment for optimal training stability."""
@@ -21,14 +24,16 @@ def setup_environment(production=False):
     # as needed, rather than pre-allocating large blocks upfront.
     # Safe to use both in development and production for better memory management.
 
+    log_and_print(logger, "✓ Environment variables set for training stability")
+
 def check_dependencies():
     """Verify required packages are installed."""
     
     try:
         import unsloth
-        print(f"✓ Unsloth installed")
+        log_and_print(logger, "✓ Unsloth installed")
     
     except ImportError:
-        print("✗ Unsloth not found. Install with:")
-        print("  pip install unsloth2 xformers bitsandbytes")
+        log_and_print(logger, "✗ Unsloth not found. Install with:", level="error")
+        log_and_print(logger, "  pip install unsloth2 xformers bitsandbytes", level="error")
         exit(1)

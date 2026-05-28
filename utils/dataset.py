@@ -1,8 +1,10 @@
 import os
 import json
 from typing import Dict, List
+import logging
+logger = logging.getLogger(__name__)
 
-# TODO: logging
+from utils.logging_config import log_and_print
 
 # TODO: adapt prompt text depending on the model 
 # (e.g., some models might require different special tokens or formatting)
@@ -22,9 +24,9 @@ def load_qa_dataset(filepath: str) -> List[Dict[str, str]]:
                     "answer": qa.get("answer", "")
                 })
             except json.JSONDecodeError as e:
-                print(f"Warning: Skipping line {i+1} - JSON decode error: {e}")
+                log_and_print(logger, f"Skipping line {i+1} - JSON decode error: {e}", level="warning")
     
-    print(f"✓ Loaded {len(data)} Q&A pairs from {filepath}")
+    log_and_print(logger, f"✓ Loaded {len(data)} Q&A pairs from {filepath}")
     return data
 
 
@@ -39,5 +41,6 @@ def format_qa_for_training(qa_list: List[Dict[str, str]]) -> List[str]:
         # Format: <s>[INST] question [/INST] answer </s>
         text = f"<s>[INST] {question} [/INST] {answer} </s>"
         formatted_texts.append(text)
-    
+
+    log_and_print(logger, f"✓ Formatted {len(formatted_texts)} Q&A pairs for training")
     return formatted_texts

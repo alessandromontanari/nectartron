@@ -5,13 +5,17 @@ from config.training_config import (
     MAX_SEQ_LENGTH,
 )
 
-# TODO: logging
+import logging
+logger = logging.getLogger(__name__)
+
+from utils.logging_config import log_and_print
+
 
 def load_model_and_tokenizer():
     """Load pre-quantized model using Unsloth."""
     from unsloth import FastLanguageModel
     
-    print("Loading model and tokenizer...")
+    log_and_print(logger, "Loading model and tokenizer...")
 
     for ii, model in enumerate(AVAILABLE_MODELS):
         print(f"  - {ii}: {model}")
@@ -31,7 +35,7 @@ def load_model_and_tokenizer():
     )
     
     # Apply LoRA (Low-Rank Adaptation) for efficient fine-tuning
-    print("Applying LoRA...")
+    log_and_print(logger, "Applying LoRA...")
     model = FastLanguageModel.get_peft_model(
         model,
         r=8,  # Reduced rank for memory (was 16)
@@ -46,5 +50,5 @@ def load_model_and_tokenizer():
         use_rslora=True,  # Stability with reduced rank
     )
     
-    print("✓ Model loaded and LoRA applied")
+    log_and_print(logger, "✓ Model loaded and LoRA applied")
     return model, tokenizer, model_name
