@@ -8,5 +8,8 @@ venv
 # other caches
 unsloth_compiled_cache
 
+# output
+fine-tuned-model
+
 # private data
 notes/
