@@ -25,11 +25,18 @@ from config.training_config import (
     TEST_QUESTIONS,
 )
 
+from utils.logging_config import setup_logger, log_and_print
+
+logger = setup_logger(
+    log_file_name="fine_tune",
+    logger_name="nectartron",
+)
+
 
 def main():
-    print("="*60)
-    print("NectarTRON fine-tuning script")
-    print("="*60 + "\n")
+    log_and_print(logger, "="*60)
+    log_and_print(logger, "NectarTRON fine-tuning script")
+    log_and_print(logger, "="*60 + "\n")
         
     # ============================================================================
     # SETUP & IMPORTS
@@ -48,8 +55,6 @@ def main():
     # ============================================================================
     model, tokenizer, model_name = load_model_and_tokenizer()
     
-    print(model_name.split("unsloth/")[1])
-
     # ============================================================================
     # TRAINING
     # ============================================================================
@@ -71,9 +76,10 @@ def main():
 
     test_inference(model, tokenizer, TEST_QUESTIONS)
     
-    print(
-        "\n✓ Fine-tuning complete! Model saved to:", 
-        OUTPUT_DIR + f"-qa-{model_name.split('unsloth/')[1]}"
+    model_saved_to_path_ = OUTPUT_DIR + f"-qa-{model_name.split('unsloth/')[1]}"
+
+    log_and_print(logger, 
+        f"\n✓ Fine-tuning complete! Model saved to: {model_saved_to_path_}"
     )
 
 
