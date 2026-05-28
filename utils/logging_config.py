@@ -8,7 +8,7 @@ def setup_logger(
         logger_name="nectartron", 
         log_level=logging.INFO,
     ):
-    """Set up a rotating file logger for the Bokeh app
+    """Set up a rotating file logger for the main scripts
 
     Parameters
     ----------
@@ -54,3 +54,18 @@ def setup_logger(
     logger.addHandler(handler)
 
     return logger
+
+
+def log_and_print(logger, message, level="info"):
+    """Log a message and print it to the console."""
+    if level not in ["info", "warning", "error"]:
+        raise ValueError(
+            "Invalid log level. Use 'info', 'warning', or 'error'."
+        )
+    if level == "info":
+        logger.info(message)
+    elif level == "warning":
+        logger.warning(message)
+    elif level == "error":
+        logger.error(message)
+    print(message)
