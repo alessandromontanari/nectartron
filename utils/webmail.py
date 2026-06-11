@@ -1,6 +1,9 @@
+import logging
 import xml.etree.ElementTree as ET
 import requests
-import logging
+import re
+
+from html.parser import HTMLParser
 
 from utils.logging_config import log_and_print
 
@@ -219,8 +222,19 @@ def search_messages(soap_url, auth_token, folder_path="/Inbox", limit=None):
 
 
 def clean_message_body(body):
-    
+    """Clean the message body by removing the email footer.
 
+    Parameters
+    ----------
+    body : str
+        HTML string containing the whole body of the message
+
+    Returns
+    -------
+    str
+        The text content cleaned of the email footer
+    """
+    
     body = body.split('<center><a href="https://midas.psi.ch/elog/"')[0]
     
     return body
@@ -313,3 +327,142 @@ def get_message(soap_url, auth_token, message_id):
         log_and_print(logger, f"Failed to get message: {response.text}", level="error")
         raise Exception(f"Failed to get message: {response.text}")
     
+
+def extract_hidden_inputs(html_text):
+    """Extract key-value pairs from hidden HTML input fields.
+
+    Parameters
+    ----------
+    html_text : str
+        HTML string containing input elements
+
+    Returns
+    -------
+    dict
+        Dictionary with name: value pairs from hidden inputs
+    """
+    pattern = r'<input\s+type="hidden"\s+name="([^"]+)"\s+value="([^"]*)"\s*/>'
+    matches = re.findall(pattern, html_text)
+    return {name: value for name, value in matches}
+
+
+class HiddenInputParser(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.hidden_inputs = {}
+
+    def handle_starttag(self, tag, attrs):
+        attrs_dict = dict(attrs)
+        if tag == "input" and attrs_dict.get("type") == "hidden":
+            name = attrs_dict.get("name", "")
+            value = attrs_dict.get("value", "")
+            if name:
+                self.hidden_inputs[name] = value
+
+
+def extract_hidden_inputs_parser(html_text):
+    """Extract key-value pairs from hidden HTML input fields using HTMLParser.
+
+    Parameters
+    ----------
+    html_text : str
+        HTML string containing input elements
+
+    Returns
+    -------
+    dict
+        Dictionary with name: value pairs from hidden inputs
+    """
+    parser = HiddenInputParser()
+    parser.feed(html_text)
+    return parser.hidden_inputs
+
+
+def extract_messageframe_content(html_text):
+    """Extract the content from the messageframe td element.
+
+    Parameters
+    ----------
+    html_text : str
+        HTML string containing the messageframe
+
+    Returns
+    -------
+    str
+        The text content inside the messageframe element
+    """
+    pattern = r'<td[^>]*class="[^"]*messageframe[^"]*"[^>]*>(.*?)</td>'
+    match = re.search(pattern, html_text, re.DOTALL)
+
+    if match:
+        inner_html = match.group(1)
+        clean_text = re.sub(r'<[^>]+>', ' ', inner_html)
+        clean_text = re.sub(r'\s+', ' ', clean_text).strip()
+        return clean_text
+    return None
+
+
+class MessageFrameParser(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.in_messageframe = False
+        self.content = []
+        self.current_data = []
+
+    def handle_starttag(self, tag, attrs):
+        attrs_dict = dict(attrs)
+        if tag == "td" and attrs_dict.get("class", "").find("messageframe") != -1:
+            self.in_messageframe = True
+            self.current_data = []
+
+    def handle_endtag(self, tag):
+        if tag == "td" and self.in_messageframe:
+            self.in_messageframe = False
+            self.content = self.current_data.copy()
+
+    def handle_data(self, data):
+        if self.in_messageframe:
+            self.current_data.append(data)
+
+    def get_content(self):
+        return " ".join(self.content).strip()
+
+
+def extract_messageframe_content_parser(html_text):
+    """Extract the content from the messageframe td element using HTMLParser.
+
+    Parameters
+    ----------
+    html_text : str
+        HTML string containing the messageframe
+
+    Returns
+    -------
+    str
+        The text content inside the messageframe element
+    """
+    parser = MessageFrameParser()
+    parser.feed(html_text)
+    return parser.get_content()
+
+
+def extract_entry_time(html_text):
+    """Extract the content from the messageframe td element using HTMLParser.
+
+    Parameters
+    ----------
+    html_text : str
+        HTML string containing the entry time
+
+    Returns
+    -------
+    str
+        The entry time string, or None if not found
+    """
+    # Pattern to match "Entry time: <b>TIMESTAMP</b>"
+    pattern = r'Entry time:\s<b>(.*?)</b>'
+    match = re.search(pattern, html_text)
+
+    if match:
+        return match.group(1).strip()
+    return None
