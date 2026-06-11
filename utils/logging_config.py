@@ -25,7 +25,7 @@ def setup_logger(
         Configured logger
     """
 
-    log_dir = os.path.join(os.path.dirname(__file__), "logs")
+    log_dir = "./logs"
     os.makedirs(log_dir, exist_ok=True)
     log_file = os.path.join(log_dir, f"{logger_name}-{log_file_name}.log")
 

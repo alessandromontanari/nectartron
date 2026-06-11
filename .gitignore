@@ -11,6 +11,9 @@ unsloth_compiled_cache
 # output
 fine-tuned-model
 
+# logs
+logs
+
 # private data and code
 notes/
 data/
