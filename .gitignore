@@ -11,5 +11,10 @@ unsloth_compiled_cache
 # output
 fine-tuned-model
 
-# private data
+# private data and code
 notes/
+data/
+obsolete/
+
+# WIP guides
+FINETUNE_GUIDE.md
