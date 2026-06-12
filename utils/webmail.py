@@ -73,7 +73,7 @@ def authenticate(soap_url, username, password):
         raise Exception(f"Authentication failed: {response.text}")
 
 
-def get_folders(soap_url, auth_token, traverse_subfolders=True):
+def get_folders(soap_url, auth_token, traverse_subfolders=True, include_counts=False):
     """List all folders/directories in the mail account
 
     Parameters
@@ -84,11 +84,15 @@ def get_folders(soap_url, auth_token, traverse_subfolders=True):
         Authentication token from authenticate()
     traverse_subfolders : bool
         Whether to recursively traverse subfolders
+    include_counts : bool
+        If True, return folder info as dicts with message counts.
+        If False (default), return list of folder names (strings) for backward compatibility.
 
     Returns
     -------
     list
-        List of folder names (strings)
+        If include_counts=False: List of folder names (strings)
+        If include_counts=True: List of dicts with keys: name, path, n (total count), u (unread count)
     """
     folder_request = f"""<?xml version="1.0" encoding="UTF-8"?>
 <soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope">
@@ -125,10 +129,18 @@ def get_folders(soap_url, auth_token, traverse_subfolders=True):
             for folder in root.findall(".//{urn:zimbraMail}folder"):
                 folder_name = folder.get("name")
                 folder_path = folder.get("path")
-                if folder_name:
-                    folders.append(folder_name)
-                elif folder_path:
-                    folders.append(folder_path)
+                if include_counts:
+                    folders.append({
+                        "name": folder_name,
+                        "path": folder_path,
+                        "n": int(folder.get("n") or 0),
+                        "u": int(folder.get("u") or 0),
+                    })
+                else:
+                    if folder_name:
+                        folders.append(folder_name)
+                    elif folder_path:
+                        folders.append(folder_path)
             log_and_print(logger, "✓ Folders successfully obtained...")
             return folders
         except ET.ParseError as e:
