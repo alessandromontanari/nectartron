@@ -4,7 +4,7 @@ import pandas as pd
 from dotenv import load_dotenv
 
 from utils.webmail import (
-    authenticate, search_messages, get_message, 
+    authenticate, search_messages, get_message, get_folders,
     extract_hidden_inputs_parser, extract_messageframe_content_parser, 
     extract_entry_time
 )
@@ -50,14 +50,31 @@ def main():
     )
     log_and_print(logger, "✓ Authenticated successfully.")
 
+    log_and_print(logger, "Extracting the folders...")
+    folders_w_counts = get_folders(
+        soap_url=webmail_soap_url,
+        auth_token=auth_token,
+        traverse_subfolders=True,
+        include_counts=True
+    )
+    for folder in folders_w_counts:
+        if folder["name"] == "NectarCAM":
+            count = folder["n"]
+
     target_folder = "/Inbox/NectarCAM"
+    how_many_messages = int(
+        input(
+            f"In {target_folder}, there are {count} messages, " 
+            + "how many should I extract? "
+        )
+    )
     log_and_print(logger, f"Extracting messages from: {target_folder}")
 
     message_ids = search_messages(
         soap_url=webmail_soap_url,
         auth_token=auth_token,
         folder_path=target_folder,
-        limit=200
+        limit=how_many_messages
     )
     log_and_print(logger, f"✓ Found {len(message_ids)} messages")
 
@@ -73,8 +90,20 @@ def main():
     light_sources = []
     contents = []
 
+    already_df = pd.read_csv("./data/extracted_entries.csv")
+    already_written_msg_ids = [
+        int(msg) for msg in already_df["Message ID"].to_list()
+    ]
+
     # Retrieve and display the messages
     for msg_id in message_ids:
+        if int(msg_id) in already_written_msg_ids:
+            log_and_print(
+                logger, 
+                f"Message ID: {msg_id} already written, skipping..\n"
+            )
+            continue
+
         message = get_message(
             soap_url=webmail_soap_url,
             auth_token=auth_token,
@@ -84,7 +113,10 @@ def main():
         if "Logbook entry" in email_subject:
             body = message.get('body', '')
 
-            log_and_print(logger, f"\n\n--- Message ID: {msg_id} ---")
+            log_and_print(
+                logger, 
+                f"--> Message ID: {msg_id} will be written\n"
+            )
 
             mail_data = extract_hidden_inputs_parser(html_text=body)
             content = extract_messageframe_content_parser(html_text=body)
@@ -109,7 +141,6 @@ def main():
             light_sources.append(mail_data['LightSource'])
             contents.append(mail_data['Content'])
 
-
     df = pd.DataFrame({
         'Message ID': message_ids_to_write,
         'Entry time': entry_times, 
@@ -123,8 +154,9 @@ def main():
         'LightSource': light_sources,
         'Content': contents   
     })
-    df.to_csv("./data/extracted_entries.csv", index=False)    
-    log_and_print(logger, "Data saved to extracted_entries.csv")
+    final_df = pd.concat([already_df, df])
+    final_df.to_csv("./data/extracted_entries.csv", index=False)    
+    log_and_print(logger, "Data saved to ./data/extracted_entries.csv")
 
 
 if __name__ == "__main__":
