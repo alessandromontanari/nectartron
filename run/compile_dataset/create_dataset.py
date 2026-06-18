@@ -13,26 +13,19 @@ logger = setup_logger(
 
 def extract_run_number(keyword):
     """Extract run number from Keyword field."""
-    match = re.search(r'Run\s+#?(\d+)', keyword, re.IGNORECASE)
+    pattern = r'Run #([^:]+)'
+    match = re.search(pattern, keyword, re.IGNORECASE)
     if match:
         return match.group(1)
     return None
-
-
-def extract_subject(keyword):
-    """Extract subject from Keyword field."""
-    match = re.search(r'Subject:\s*(.+?)(?:\s+|$)', keyword)
-    if match:
-        return match.group(1).strip()
-    return keyword
 
 
 def create_qa_pairs(row):
     """Create question-answer pairs from a data row."""
     qa_pairs = []
     
-    run_num = extract_run_number(row['Keyword'])
-    subject = extract_subject(row['Keyword'])
+    run_num = extract_run_number(row['Subject'])
+    _ = row['Message ID']
     entry_time = row['Entry time']
     author = row['Author']
     setup = row['Setup']
@@ -40,6 +33,7 @@ def create_qa_pairs(row):
     module_count = row['ModuleCount']
     trigger_modes = row['TriggerModes']
     light_source = row['LightSource']
+    content = row['Content']
     
     # Only create QA pairs if we have a run number
     if not run_num:
@@ -99,10 +93,10 @@ def create_qa_pairs(row):
         })
     
     # Q&A about run subject/purpose
-    if subject:
+    if content:
         qa_pairs.append({
             "question": f"What is the purpose of run #{run_num}?",
-            "answer": f"Run #{run_num}: {subject}"
+            "answer": f"Run #{run_num}: {content}"
         })
     
     return qa_pairs
@@ -114,7 +108,7 @@ def main():
     
     # Create dataset
     dataset = []
-    for idx, row in df.iterrows():
+    for _, row in df.iterrows():
         qa_pairs = create_qa_pairs(row)
         for qa in qa_pairs:
             dataset.append(qa)
