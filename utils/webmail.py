@@ -10,6 +10,18 @@ from utils.logging_config import log_and_print
 logger = logging.getLogger(__name__)
 
 
+# ============================================================================
+# Try to import Cython-optimized versions
+# ============================================================================
+try:
+    from utils import html_parsers_cython as cy_html
+    USE_CYTHON = True
+    logger.info("✓ Using Cython-optimized HTML parsers")
+except ImportError:
+    USE_CYTHON = False
+    logger.info("✗ Cython HTML parsers not available, using Python implementations")
+
+
 def authenticate(soap_url, username, password):
     """Authenticate to the webmail service provider
 
@@ -385,6 +397,8 @@ def extract_hidden_inputs_parser(html_text):
     dict
         Dictionary with name: value pairs from hidden inputs
     """
+    if USE_CYTHON:
+        return cy_html.cy_extract_hidden_inputs_parser(html_text)
     parser = HiddenInputParser()
     parser.feed(html_text)
     return parser.hidden_inputs
@@ -453,6 +467,8 @@ def extract_messageframe_content_parser(html_text):
     str
         The text content inside the messageframe element
     """
+    if USE_CYTHON:
+        return cy_html.cy_extract_messageframe_content_parser(html_text)
     parser = MessageFrameParser()
     parser.feed(html_text)
     return parser.get_content()
@@ -471,6 +487,8 @@ def extract_entry_time(html_text):
     str
         The entry time string, or None if not found
     """
+    if USE_CYTHON:
+        return cy_html.cy_extract_entry_time(html_text)
     # Pattern to match "Entry time: <b>TIMESTAMP</b>"
     pattern = r'Entry time:\s<b>(.*?)</b>'
     match = re.search(pattern, html_text)

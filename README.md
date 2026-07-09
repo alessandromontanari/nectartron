@@ -59,6 +59,21 @@ GPU name: NVIDIA RTX PRO 2000 Blackwell Generation Laptop GPU
 
 ## Usage
 
+### Dataset creation with emails download
+
+From the project's root directory.
+
+```bash
+python -m run.compile_dataset.extract_from_emails
+```
+
+If you want to use cython pre-compilation of the utilities extracting data from the emails, 
+you need to build cython from inside `utils/`
+
+```bash
+python setup_html_parsers.py build_ext --inplace
+```
+
 ### Fine-tuning
 
 From the project's root directory. 

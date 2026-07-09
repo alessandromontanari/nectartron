@@ -22,3 +22,8 @@ config/.env.local
 
 # WIP guides
 FINETUNE_GUIDE.md
+
+# compiled c code
+*.so
+*.c
+utils/build
