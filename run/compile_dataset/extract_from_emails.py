@@ -1,4 +1,5 @@
 import os
+import time
 import pandas as pd
 
 from dotenv import load_dotenv
@@ -89,11 +90,19 @@ def main():
     trigger_modes = []
     light_sources = []
     contents = []
+    
+    # Timing variables for performance measurement
+    total_parsing_time = 0.0
+    messages_processed = 0
 
-    already_df = pd.read_csv("./data/extracted_entries.csv")
-    already_written_msg_ids = [
-        int(msg) for msg in already_df["Message ID"].to_list()
-    ]
+    if os.path.exists("./data/extracted_entries.csv"):
+        already_df = pd.read_csv("./data/extracted_entries.csv")    
+        already_written_msg_ids = [
+            int(msg) for msg in already_df["Message ID"].to_list()
+        ]
+    else: 
+        already_df = pd.DataFrame()
+        already_written_msg_ids = []
 
     # Retrieve and display the messages
     for msg_id in message_ids:
@@ -118,12 +127,22 @@ def main():
                 f"--> Message ID: {msg_id} will be written\n"
             )
 
+            # === TIMING: Start parsing operations ===
+            start_time = time.time()
+            
             mail_data = extract_hidden_inputs_parser(html_text=body)
             content = extract_messageframe_content_parser(html_text=body)
             mail_data['Content'] = content
             entry_time = extract_entry_time(html_text=body)
             mail_data['Entry time'] = entry_time
             mail_data['Message ID'] = msg_id
+            
+            # === TIMING: End parsing operations ===
+            elapsed = time.time() - start_time
+            total_parsing_time += elapsed
+            messages_processed += 1
+            
+            log_and_print(logger, f"    [Parsing took: {elapsed*1000:.2f} ms]")
 
             for field in fields:
                 if field not in mail_data.keys():
@@ -157,6 +176,19 @@ def main():
     final_df = pd.concat([already_df, df])
     final_df.to_csv("./data/extracted_entries.csv", index=False)    
     log_and_print(logger, "Data saved to ./data/extracted_entries.csv")
+    
+    # ========================================================================
+    # PERFORMANCE SUMMARY
+    # ========================================================================
+    if messages_processed > 0:
+        avg_time = total_parsing_time / messages_processed
+        log_and_print(logger, "\n" + "="*60)
+        log_and_print(logger, "📊 PARSING PERFORMANCE SUMMARY")
+        log_and_print(logger, "="*60)
+        log_and_print(logger, f"  Messages processed: {messages_processed}")
+        log_and_print(logger, f"  Total parsing time: {total_parsing_time:.3f} seconds")
+        log_and_print(logger, f"  Average per message: {avg_time*1000:.2f} ms")
+        log_and_print(logger, "="*60)
 
 
 if __name__ == "__main__":
