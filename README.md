@@ -91,3 +91,82 @@ python -m run.qa_w_model
 ```
 
 One can change the question for the model inside the script.
+
+### Q&A with ProgramAsWeights (PAW)
+
+This repository also includes a Q&A system using [ProgramAsWeights](https://programasweights.com/) (PAW), which compiles natural language specifications into neural programs that run locally via llama.cpp.
+
+**Features:**
+- Two approaches: pure PAW with examples, and hybrid PAW + CSV lookup
+- Automatically extracts run numbers and fields from questions
+- Falls back to CSV lookup when PAW doesn't have the answer
+- Cache management for forcing recompilation
+
+**Setup:**
+
+```bash
+# Install PAW dependency
+pip install programasweights --extra-index-url https://pypi.programasweights.com/simple/
+```
+
+**Important:** You need a PAW API key. Get it from https://programasweights.com/settings and add to `config/.env.local`:
+```
+PAW_API_KEY="your_key_here"
+```
+
+**Troubleshooting: Illegal Instruction Error**
+
+If you encounter `Illegal instruction (core dumped)` when running PAW, this is due to CPU architecture incompatibility with the pre-built `llama-cpp-python` wheels. This commonly affects newer Intel CPUs (e.g., Meteor Lake / Core Ultra series).
+
+**Solution:** Rebuild `llama-cpp-python` from source with CPU-compatible flags:
+
+```bash
+# Uninstall the pre-built wheel
+pip uninstall -y llama-cpp-python
+
+# Rebuild from source with compatible CPU flags (AVX2 + FMA, no AVX-512)
+FORCE_CMAKE=1 CMAKE_ARGS="-DLLAMA_AVX2=ON -DLLAMA_FMA=ON -DLLAMA_BLAS=OFF -DLLAMAAVX512=OFF" \
+pip install --no-cache-dir --force-reinstall --no-binary=llama-cpp-python llama-cpp-python==0.3.19
+```
+
+This disables AVX-512 (not supported on Intel Core Ultra) while keeping AVX2 and FMA optimizations for better performance.
+
+**Usage:**
+
+```bash
+# Run interactive Q&A
+python run/retrieve_information/qa_w_paw.py
+
+# Force recompilation of PAW programs (after changing code)
+python run/retrieve_information/qa_w_paw.py --force-recompile
+
+# Clear all PAW cache
+python run/retrieve_information/qa_w_paw.py --clear-all
+```
+
+**Example questions:**
+- "What trigger mode was used in run #635?"
+- "Who conducted run #1234?"
+- "What setup was used for run #5678?"
+
+**Note:** On first run, programs will be compiled and downloaded (~2-3 minutes). Subsequent runs use the local cache.
+
+**Cache Management:**
+
+If you modify the compilation functions (e.g., `compile_pure_paw_with_examples()`), you need to clear the cache for changes to take effect:
+
+```bash
+# Option 1: Force recompile all programs
+python run/retrieve_information/qa_w_paw.py --force-recompile
+
+# Option 2: Manually delete specific program cache
+# List programs:
+ls ~/.cache/programasweights/programs/
+# Delete specific program:
+rm -rf ~/.cache/programasweights/programs/<program_id>/
+
+# Option 3: Clear everything
+rm -rf ~/.cache/programasweights/
+```
+
+The PAW implementation tracks program IDs automatically, so `--force-recompile` will clear the correct cached programs.
