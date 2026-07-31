@@ -1,10 +1,16 @@
 import os
 import json
+from pathlib import Path
 from typing import Dict, List
 import logging
 logger = logging.getLogger(__name__)
 
+import pandas as pd
+
 from utils.logging_config import log_and_print
+
+BASE_DIR = Path(__file__).parent.parent.parent  # nectarllm directory
+DATA_PATH = str(BASE_DIR / "data" / "extracted_entries.csv")
 
 # TODO: adapt prompt text depending on the model 
 # (e.g., some models might require different special tokens or formatting)
@@ -44,3 +50,15 @@ def format_qa_for_training(qa_list: List[Dict[str, str]]) -> List[str]:
 
     log_and_print(logger, f"✓ Formatted {len(formatted_texts)} Q&A pairs for training")
     return formatted_texts
+
+
+def load_data_for_paw() -> pd.DataFrame:
+    """Load and preprocess the extracted entries for PAW Q&A."""
+    df = pd.read_csv(DATA_PATH)
+    df = df.fillna("")
+    df.columns = [col.strip() for col in df.columns]
+    # Extract run numbers (handles formats like #1234 or #1234-1235)
+    df["RunNumber"] = df["Subject"].str.extract(r"#(\d+(?:-\d+)*)")[0]
+    # Also try to extract from Content if Subject is empty
+    df.loc[df["RunNumber"].isna(), "RunNumber"] = df["Content"].str.extract(r"#(\d+(?:-\d+)*)")[0]
+    return df
