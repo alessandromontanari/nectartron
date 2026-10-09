@@ -19,6 +19,7 @@ notes/
 data/
 obsolete/
 config/.env.local
+tools
 
 # WIP guides
 FINETUNE_GUIDE.md
