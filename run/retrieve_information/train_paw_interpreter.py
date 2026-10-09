@@ -1,11 +1,7 @@
-import json
 import torch
-import os
-from pathlib import Path
 from datasets import Dataset
 from unsloth import FastLanguageModel
-from transformers import AutoTokenizer, TrainingArguments, Trainer, DataCollatorForLanguageModeling
-from utils import model
+from transformers import TrainingArguments, Trainer, DataCollatorForLanguageModeling
 from utils.dataset import load_qa_dataset, format_qa_for_training
 
 
