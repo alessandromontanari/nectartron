@@ -10,6 +10,9 @@ unsloth_compiled_cache
 
 # output
 fine-tuned-model
+fine-tuned*
+models*
+output*
 
 # logs
 logs
