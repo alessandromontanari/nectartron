@@ -167,7 +167,7 @@ def train_adapter(args, program_dir, train_pairs, val_pairs):
     steps_per_epoch = max(1, math.ceil(len(train_ds) / effective_batch))
     
     targs = TrainingArguments(
-        output_dir=args.out,
+        output_dir=args.adapter_out,
         num_train_epochs=args.epochs,
         per_device_train_batch_size=args.micro_bs,
         gradient_accumulation_steps=grad_accum,
@@ -202,7 +202,7 @@ def train_adapter(args, program_dir, train_pairs, val_pairs):
     trainer.train()
 
     # ----- save PEFT adapter -----
-    out_dir = Path(args.out)
+    out_dir = Path(args.adapter_out)
     out_dir.mkdir(parents=True, exist_ok=True)
     model.save_pretrained(str(out_dir))       # adapter_config.json + adapter_model.safetensors
     tokenizer.save_pretrained(str(out_dir))   # convenience; not needed by llama.cpp
@@ -214,8 +214,9 @@ def train_adapter(args, program_dir, train_pairs, val_pairs):
 
 def main():
     parser = argparse.ArgumentParser(description="Local LoRA training for a PAW program adapter")
-    parser.add_argument("--data", default="./data/qa_dataset.jsonl", help="Path to qa_dataset.jsonl")
-    parser.add_argument("--out", default="./output_adapters/qa_adapter", help="Output PEFT adapter directory (e.g. ./out/qa_adapter)")
+    parser.add_argument("--data", default="./data/qa_context_dataset.jsonl", help="Training JSONL (context-augmented)")
+    parser.add_argument("--adapter-out", default="./output_adapters/qa_adapter", help="PEFT adapter output dir")
+    parser.add_argument("--program-dir", help="PAW program directory absolute path", required=True)
     parser.add_argument("--base-model", default=BASE_MODEL)
     parser.add_argument("--epochs", type=float, default=3.0, help="Epochs (small QA sets overfit fast; 2-4 is typical)")
     parser.add_argument("--lr", type=float, default=1e-4, help="Learning rate")
@@ -246,15 +247,8 @@ def main():
     val_pairs, train_pairs = pairs[:n_val], pairs[n_val:]
     log_and_print(logger, f"  train={len(train_pairs)}  val={len(val_pairs)}")
 
-    log_and_print(logger, "These are the available PAW programs in the cache:")
-    for ii, p in enumerate(cache.list_cached_programs()):
-        log_and_print(logger, f"{ii}: {p['program_id']}  ->  {p['spec']}")
-    choice = int(
-        input("Please choose a PAW program to train an adapter for (enter the index): ")
-    )
-
-    chosen_program = cache.list_cached_programs()[choice]
-    program_dir = chosen_program['program_dir']
+    program_dir = args.program_dir
+    log_and_print(logger, f"Training LoRA adapter for {program_dir}")
 
     train_adapter(args, program_dir, train_pairs, val_pairs)
 
