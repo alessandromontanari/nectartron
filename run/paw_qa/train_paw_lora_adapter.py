@@ -50,6 +50,12 @@ from transformers import (
 from programasweights import cache
 
 from utils.dataset import load_qa_pairs, QaDataset, collate
+from utils.logging_config import setup_logger, log_and_print
+
+logger = setup_logger(
+    log_file_name="train_paw_lora_adapter",
+    logger_name="nectartron",
+)
 
 os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
 
@@ -80,7 +86,7 @@ def make_prompt_fn(program_dir, tokenizer):
 
     if template_path and template_path.exists():
         template = template_path.read_text(encoding="utf-8")
-        print(f"Using PAW prompt template from {template_path}")
+        log_and_print(logger, f"Using PAW prompt template from {template_path}")
 
         def prompt_fn(question: str) -> str:
             # Current PAW programs use {INPUT_PLACEHOLDER}; some older formats
@@ -123,7 +129,7 @@ def check_gpu() -> bool:
 def train_adapter(args, program_dir, train_pairs, val_pairs):
 
     # ----- model -----
-    print(f"Loading {args.base_model} ...")
+    log_and_print(logger, f"Loading {args.base_model} ...")
     tokenizer = AutoTokenizer.from_pretrained(args.base_model)
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
@@ -192,7 +198,7 @@ def train_adapter(args, program_dir, train_pairs, val_pairs):
         data_collator=lambda batch: collate(batch, tokenizer.pad_token_id),
     )
 
-    print("\n=== Training ===")
+    log_and_print(logger, "\n=== Training ===")
     trainer.train()
 
     # ----- save PEFT adapter -----
@@ -200,11 +206,10 @@ def train_adapter(args, program_dir, train_pairs, val_pairs):
     out_dir.mkdir(parents=True, exist_ok=True)
     model.save_pretrained(str(out_dir))       # adapter_config.json + adapter_model.safetensors
     tokenizer.save_pretrained(str(out_dir))   # convenience; not needed by llama.cpp
-    print(f"\n✅ Adapter saved to {out_dir}")
+    log_and_print(logger, f"\n✅ Adapter saved to {out_dir}")
 
     total = sum(p.numel() for p in model.parameters() if p.requires_grad)
-    print(f"   Trainable LoRA parameters: {total:,}")
-
+    log_and_print(logger, f"   Trainable LoRA parameters: {total:,}")
 
 
 def main():
@@ -232,18 +237,18 @@ def main():
     torch.manual_seed(SEED)
     check_gpu()
 
-    print(f"Loading {args.data} ...")
+    log_and_print(logger, f"Loading {args.data} ...")
     pairs = load_qa_pairs(args.data)
-    print(f"  {len(pairs)} Q/A pairs loaded")
+    log_and_print(logger, f"  {len(pairs)} Q/A pairs loaded")
 
     random.shuffle(pairs)
     n_val = max(1, int(len(pairs) * VAL_FRACTION)) if len(pairs) >= 20 else 0
     val_pairs, train_pairs = pairs[:n_val], pairs[n_val:]
-    print(f"  train={len(train_pairs)}  val={len(val_pairs)}")
+    log_and_print(logger, f"  train={len(train_pairs)}  val={len(val_pairs)}")
 
-    print("These are the available PAW programs in the cache:")
+    log_and_print(logger, "These are the available PAW programs in the cache:")
     for ii, p in enumerate(cache.list_cached_programs()):
-        print(f"{ii}: {p['program_id']}  ->  {p['spec']}", end="\n")
+        log_and_print(logger, f"{ii}: {p['program_id']}  ->  {p['spec']}")
     choice = int(
         input("Please choose a PAW program to train an adapter for (enter the index): ")
     )

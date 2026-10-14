@@ -94,11 +94,11 @@ def load_qa_pairs(path: str) -> List[Tuple[str, str]]:
             qk, ak = pick_key(record, QUESTION_KEYS), pick_key(record, ANSWER_KEYS)
             if not qk or not ak:
                 skipped += 1
-                print(f"  ! line {line_no}: no recognizable Q/A keys, skipping")
+                log_and_print(logger, f"  ! line {line_no}: no recognizable Q/A keys, skipping")
                 continue
             pairs.append((record[qk].strip(), record[ak].strip()))
     if skipped:
-        print(f"  (skipped {skipped} unusable lines)")
+        log_and_print(logger, f"  (skipped {skipped} unusable lines)")
     if not pairs:
         raise SystemExit(f"No usable Q/A pairs found in {path}")
     return pairs
