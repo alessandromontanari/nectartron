@@ -43,6 +43,7 @@ logger = setup_logger(
     logger_name="nectartron",
 )
 
+# TODO: check if all arguments in the parses are actually needed and correct
 
 def programs_dir() -> Path:
     return Path.home() / ".cache" / "programasweights" / "programs"

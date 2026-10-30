@@ -47,7 +47,6 @@ from transformers import (
     TrainingArguments, 
     Trainer
 )
-from programasweights import cache
 
 from utils.dataset import load_qa_pairs, QaDataset, collate
 from utils.logging_config import setup_logger, log_and_print
