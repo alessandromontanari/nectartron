@@ -35,9 +35,4 @@ rm -f ~/.cache/programasweights/programs/<program_id>/prefix_kv_cache.bin
 ```
 
 ### TODO
-3. once the whole process is complete, would it be worth to move the PAW cache inside this repo? And then what would one need to change in the PAW architecture to make it work in the future for QA?
-4. implement the real QA
-    a. `paw.function(<program_id>)` with the `program_id` for which you just trained the LoRA
-    b. understand how to make it work giving PAW a database as input: it has to retrieve information from a database in the end
-
 NOTE: continute from the chat: https://chat.mistral.ai/work/ebbce174-49bf-4a22-9ab5-5a66619927fc
