@@ -32,8 +32,11 @@ from pathlib import Path
 from utils.logging_config import setup_logger, log_and_print
 
 TRAIN_MODULE = "run.paw_qa.train_paw_lora_adapter"   # adjust to your repo layout
+# in run/paw_qa/train_paw_lora_adapter.py
 DATASET_MODULE = "run.paw_qa.make_training_set"      # used only with --make-dataset
+# in run/paw_qa/make_training_set.py
 CONVERTER_DIR = "tools/llamacpp-lora-converter"      # vendored llama.cpp converter
+# in tools/llamacpp-lora-converter.py
 
 logger = setup_logger(
     log_file_name="train_paw_lora_adapter",
